@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,8 @@ import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
 import javax.swing.text.html.parser.Entity;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.*;
@@ -29,20 +32,24 @@ public class QuerydslBasicTest {
 
     @BeforeEach
     public void before() {
+
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
+
         em.persist(teamA);
         em.persist(teamB);
+
         Member member1 = new Member("member1", 10, teamA);
         Member member2 = new Member("member2", 20, teamA);
         Member member3 = new Member("member3", 30, teamB);
         Member member4 = new Member("member4", 40, teamB);
+
         em.persist(member1);
         em.persist(member2);
         em.persist(member3);
         em.persist(member4);
-        //초기화
 
+        //초기화
         em.flush();
         em.clear();
 
@@ -63,7 +70,6 @@ public class QuerydslBasicTest {
 
     @Test
     public void startQuerydsl() {
-
 
         QMember m1 = new QMember("m1");//같은 테이블을 join 해야하는 경우엔 이렇게 추가로 선언해서 쓰자.
 
@@ -103,5 +109,33 @@ public class QuerydslBasicTest {
         assertThat(findMember.getUsername()).isEqualTo("member1");
         assertThat(findMember.getAge()).isEqualTo(10);
     }
+
+
+    @Test
+    public void resultFetch() {
+//        List<Member> fetch = queryFactory
+//                .selectFrom(member)
+//                .fetch();
+//
+//        Member fetchOne = queryFactory
+//                .selectFrom(member)
+//                .fetchOne();
+//
+//        Member fetchFirst = queryFactory
+//                .selectFrom(member)
+//                .fetchFirst();
+
+//        QueryResults<Member> results = queryFactory
+//                .selectFrom(member)
+//                .fetchResults();
+
+//        results.getTotal();//복잡하고 중요한 쿼리라면 이걸 날리지 말아야 한다.
+//        List<Member> content = results.getResults();
+
+        long total = queryFactory
+                .selectFrom(member)
+                .fetchCount();
+    }
+
 
 }
