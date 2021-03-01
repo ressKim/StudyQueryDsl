@@ -24,6 +24,9 @@ public class QuerydslBasicTest {
     @Autowired
     EntityManager em;
 
+    JPAQueryFactory queryFactory;
+
+
     @BeforeEach
     public void before() {
         Team teamA = new Team("teamA");
@@ -42,6 +45,8 @@ public class QuerydslBasicTest {
 
         em.flush();
         em.clear();
+
+        queryFactory = new JPAQueryFactory(em);
     }
 
     @Test//먼저 jpql 으로 작성
@@ -58,7 +63,7 @@ public class QuerydslBasicTest {
 
     @Test
     public void startQuerydsl() {
-        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+
 
         QMember m1 = new QMember("m1");//같은 테이블을 join 해야하는 경우엔 이렇게 추가로 선언해서 쓰자.
 
@@ -70,6 +75,33 @@ public class QuerydslBasicTest {
                 .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+
+    @Test
+    public void search() {
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1")
+                        .and(member.age.eq(10)))
+                .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getAge()).isEqualTo(10);
+    }
+
+    @Test
+    public void searchAndParam() {
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(//and 일경우 이렇게도 할 수 있다. - (이렇게 하면 나중에 동적쿼리 깔끔할수있다고 한다)
+                        member.username.eq("member1"),
+                        member.age.eq(10)
+                )
+                .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getAge()).isEqualTo(10);
     }
 
 }
