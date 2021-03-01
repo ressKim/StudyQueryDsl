@@ -15,6 +15,7 @@ import javax.persistence.EntityManager;
 import javax.swing.text.html.parser.Entity;
 
 import static org.assertj.core.api.Assertions.*;
+import static study.querydsl.entity.QMember.*;
 
 @SpringBootTest
 @Transactional
@@ -58,12 +59,14 @@ public class QuerydslBasicTest {
     @Test
     public void startQuerydsl() {
         JPAQueryFactory queryFactory = new JPAQueryFactory(em);
-        QMember m = QMember.member;
 
+        QMember m1 = new QMember("m1");//같은 테이블을 join 해야하는 경우엔 이렇게 추가로 선언해서 쓰자.
+
+        //따로 안만들고 QMember 에서 만들어놓은 QMember.member 를 사용 - QMember. 을 static 지정하면 더 편하게 사용 할 수 있다.
         Member findMember = queryFactory
-                .select(m)
-                .from(m)
-                .where(m.username.eq("member1"))//파라미터 바인딩
+                .select(member)
+                .from(member)
+                .where(member.username.eq("member1"))//파라미터 바인딩
                 .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
