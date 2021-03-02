@@ -512,5 +512,39 @@ public class QuerydslBasicTest {
         }
     }
 
+    //projection select 구문에 나열하는것
+    @Test
+    public void simpleProjection(){
+        List<String> result = queryFactory
+                .select(member.username)
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+
+    // tuple 은 컨트롤러나 서비스에서 쓰지말고 레파지토리에서 끝내도록 해보자
+    // 앞단에서는 dto 로 바꿔서 반환하는것으로 설계해서 해보자.
+    @Test
+    public void tupleProjection(){
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age)
+                .from(member)
+                .fetch();
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            System.out.println("username = " + username);
+            System.out.println("age = " + age);
+
+
+        }
+    }
+
+
+
+
 
 }//QuerydslBasicTest end
