@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.UserDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
@@ -427,13 +431,13 @@ public class QuerydslBasicTest {
 
     /**
      * select 절에서의 subQuery - 하이버네이트 구현체를 사용하여 구현하는것
-     *
+     * <p>
      * from 절의 subQuery 는 안된다.
-     *
+     * <p>
      * from 절의 subQuery 해결 방안.
-     *      1. 서브쿼리를 join 으로 변경한다.(가능한 상황도 있고, 불가능한 상황도 있다.)
-     *      2. 어플리케이션에서 쿼리를 2번 분리해서 실행한다.
-     *      3. nativeSQL 을 사용한다.
+     * 1. 서브쿼리를 join 으로 변경한다.(가능한 상황도 있고, 불가능한 상황도 있다.)
+     * 2. 어플리케이션에서 쿼리를 2번 분리해서 실행한다.
+     * 3. nativeSQL 을 사용한다.
      */
     @Test
     public void selectSubQuery() {
@@ -454,7 +458,7 @@ public class QuerydslBasicTest {
     }
 
     @Test
-    public void basicCase(){
+    public void basicCase() {
         List<String> result = queryFactory
                 .select(member.age
                         .when(10).then("열살")
@@ -467,10 +471,11 @@ public class QuerydslBasicTest {
             System.out.println("s = " + s);
         }
     }
+
     //사실 db 에서 이런식으로 값 넣으면서 하는 case 는 좋지 않다. 이렇게 써야할 때 생각해 보기.
     //복잡한 경우
     @Test
-    public void complexCase(){
+    public void complexCase() {
         List<String> result = queryFactory
                 .select(new CaseBuilder()
                         .when(member.age.between(0, 20)).then("0~20살")
@@ -483,9 +488,10 @@ public class QuerydslBasicTest {
             System.out.println("s = " + s);
         }
     }
+
     //상수가 필요한 경우
     @Test
-    public void constant(){
+    public void constant() {
         List<Tuple> result = queryFactory
                 .select(member.username, Expressions.constant("A"))
                 .from(member)
@@ -498,7 +504,7 @@ public class QuerydslBasicTest {
 
     //문자열 붙이기
     @Test
-    public void concat(){
+    public void concat() {
 
         //{username}_{age}
         List<String> result = queryFactory
@@ -514,7 +520,7 @@ public class QuerydslBasicTest {
 
     //projection select 구문에 나열하는것
     @Test
-    public void simpleProjection(){
+    public void simpleProjection() {
         List<String> result = queryFactory
                 .select(member.username)
                 .from(member)
@@ -528,7 +534,7 @@ public class QuerydslBasicTest {
     // tuple 은 컨트롤러나 서비스에서 쓰지말고 레파지토리에서 끝내도록 해보자
     // 앞단에서는 dto 로 바꿔서 반환하는것으로 설계해서 해보자.
     @Test
-    public void tupleProjection(){
+    public void tupleProjection() {
         List<Tuple> result = queryFactory
                 .select(member.username, member.age)
                 .from(member)
@@ -538,13 +544,93 @@ public class QuerydslBasicTest {
             Integer age = tuple.get(member.age);
             System.out.println("username = " + username);
             System.out.println("age = " + age);
+        }
+    }
 
-
+    @Test
+    public void findDtoByJPQL() {
+        //new 오퍼레이현 활용
+        List<MemberDto> result = em.createQuery("select " +
+                " new study.querydsl.dto.MemberDto(m.username, m.age)" +
+                " from Member m", MemberDto.class)
+                .getResultList();
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
         }
     }
 
 
+    //3가지 방식이 있다.
+    //setter 방식
+    @Test
+    public void findDtoBySetter() {
+        List<MemberDto> result = queryFactory
+                .select(Projections.bean(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
 
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+    //as 사용법
+    @Test
+    public void findUserDto() {
+
+        QMember memberSub = new QMember("memberSub");
+
+        List<UserDto> result = queryFactory
+                .select(Projections.fields(UserDto.class,
+                        member.username.as("name"),//필드명과 이름이 다를때 이렇게 해주자
+                        //필드나 서브쿼리에 별칭 달아주고 싶을때
+                        ExpressionUtils.as(JPAExpressions
+                                .select(memberSub.age.max())
+                                .from(memberSub), "age")
+                ))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : result) {
+            System.out.println("userDto = " + userDto);
+        }
+
+    }
+
+    //field 방식
+    @Test
+    public void findDtoByField() {
+        List<MemberDto> result = queryFactory
+                .select(Projections.fields(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    //생성자 방식
+    @Test
+    public void findDtoByConstructor() {
+        List<UserDto> result = queryFactory
+                .select(Projections.constructor(UserDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : result) {
+            System.out.println("userDto = " + userDto);
+        }
+//        for (MemberDto memberDto : result) {
+//            System.out.println("memberDto = " + memberDto);
+//        }
+
+    }
 
 
 }//QuerydslBasicTest end
