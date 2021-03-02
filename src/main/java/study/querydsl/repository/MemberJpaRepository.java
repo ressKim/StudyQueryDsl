@@ -138,7 +138,7 @@ public class MemberJpaRepository {
                 )
                 .fetch();
     }
-    
+
     //이렇게 필요에 따라 조립도 해 놓을 수 있다.
     private BooleanExpression ageBetween(int ageLoe, int ageGoe) {
         return ageGoe(ageLoe).and(ageGoe(ageGoe));
