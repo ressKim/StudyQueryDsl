@@ -20,12 +20,12 @@ public class InitMember {
 
     //spring 동작방식때문에 postConstruct 와 transactional 을 분리해야한다.
     @PostConstruct
-    public void init(){
+    public void init() {
         initMemberService.init();
     }
 
     @Component
-    static class InitMemberService{
+    static class InitMemberService {
 
         @PersistenceContext
         EntityManager em;
@@ -40,7 +40,7 @@ public class InitMember {
             em.persist(teamB);
 
             for (int i = 0; i < 100; i++) {
-                Team selectedTeam = i % 2 == 0? teamA : teamB;
+                Team selectedTeam = i % 2 == 0 ? teamA : teamB;
                 em.persist(new Member("member" + i, i, selectedTeam));
             }
         }
