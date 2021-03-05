@@ -2,10 +2,12 @@ package study.querydsl.repository;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import study.querydsl.dto.MemberSearchCondition;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.dto.QMemberTeamDto;
@@ -83,11 +85,23 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
         //count 쿼리는 효율적이게 관리하는게 좋다.
         List<MemberTeamDto> content = getMemberTeamDtos(condition, pageable);
 
-        long total = getTotal(condition, pageable);
+        JPAQuery<Member> countQuery = queryFactory
+                .select(member)
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(condition.getUsername()),
+                        teamNameEq(condition.getTeamName()),
+                        ageGoe(condition.getAgeGoe()),
+                        ageLoe(condition.getAgeLoe())
+                );
 
-        return new PageImpl<>(content, pageable, total);
+
+//        long total = getTotal(condition, pageable);
+
+//        return new PageImpl<>(content, pageable, total);
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchCount);// 이렇게 하면 조건 만족할때만 카운트 쿼리 날리게 된다
     }
-
 
 
     private List<MemberTeamDto> getMemberTeamDtos(MemberSearchCondition condition, Pageable pageable) {
